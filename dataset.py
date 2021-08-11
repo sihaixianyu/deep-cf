@@ -15,7 +15,7 @@ class BaseDataset(data.Dataset):
 
 
 class TrainDataset(BaseDataset):
-    def __init__(self, info_dict: dict, pos_train_arr: np.ndarray, inter_mat: np.ndarray,  neg_num=5):
+    def __init__(self, info_dict: dict, pos_train_arr: np.ndarray, inter_mat: np.ndarray,  neg_num=4):
         super().__init__(info_dict)
         self.pos_train_arr = pos_train_arr
         self.inter_mat = inter_mat
@@ -34,7 +34,7 @@ class TrainDataset(BaseDataset):
         user_vec = self.inter_mat[uid]
         item_vec = self.inter_mat.T[iid]
 
-        return uid, iid, user_vec, item_vec, rating
+        return user_vec, item_vec, rating
 
     def neg_sample(self):
         assert self.neg_num > 0, 'neg_num must be larger than 0'
@@ -47,7 +47,7 @@ class TrainDataset(BaseDataset):
                 neg_iid = np.random.randint(self.item_num)
                 while (uid, neg_iid) in self.inter_mat:
                     neg_iid = np.random.randint(self.item_num)
-                train_arr.append([uid, neg_iid, np.float32(1)])
+                train_arr.append([uid, neg_iid, np.float32(0)])
 
         return train_arr
 

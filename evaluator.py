@@ -2,14 +2,13 @@ import sys
 
 import numpy as np
 import torch
+from torch.nn import Module
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from model import CFNet
-
 
 class Evaluator:
-    def __init__(self, loader: DataLoader, model: CFNet, topk=10):
+    def __init__(self, loader: DataLoader, model: Module, topk=10):
         self.loader = loader
         self.model = model
         self.topk = topk
@@ -18,13 +17,12 @@ class Evaluator:
         self.model.eval()
 
         hit_list, ndcg_list = [], []
-        for uids, iids, user_vecs, item_vecs in tqdm(self.loader, desc='Evaluate', file=sys.stdout):
-            uids = uids.to(self.model.device)
+        for _, iids, user_vecs, item_vecs in tqdm(self.loader, desc='Evaluate', file=sys.stdout):
             iids = iids.to(self.model.device)
             user_vecs = user_vecs.to(self.model.device)
             item_vecs = item_vecs.to(self.model.device)
 
-            pred_ratings = self.model.predict(uids, iids, user_vecs, item_vecs)
+            pred_ratings = self.model.predict(user_vecs, item_vecs)
             pred_ratings = torch.squeeze(pred_ratings)
             _, idxs = torch.topk(pred_ratings, self.topk)
             rec_list = torch.take(iids, idxs).cpu().numpy().tolist()

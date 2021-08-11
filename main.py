@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from dataset import TestDataset
 from dataset import TrainDataset
 from evaluator import Evaluator
-from model import CFNet
+from model import MLP
 from trainer import Trainer
 from util import print_res, load_data
 
@@ -30,10 +30,14 @@ if __name__ == '__main__':
                               num_workers=config['num_workers'])
     test_loader = DataLoader(test_dataset, batch_size=config['test_neg_num'], shuffle=False)
 
-    model = CFNet(info_dict['user_num'], info_dict['item_num'], config['mlp_dims'],
-                  config['user_mlp_dims'],
-                  config['item_mlp_dims'],
-                  device=device)
+    model = MLP(info_dict['user_num'], info_dict['item_num'], config['mlp_dims'], device=device)
+    # model = DMF(info_dict['user_num'], info_dict['item_num'],
+    #             config['user_mlp_dims'], config['item_mlp_dims'],
+    #             device=device)
+    # model = CFNet(info_dict['user_num'], info_dict['item_num'], config['mlp_dims'],
+    #               config['user_mlp_dims'],
+    #               config['item_mlp_dims'],
+    #               device=device)
     optimizer = torch.optim.Adam(model.parameters(), lr=config['learning_rate'], weight_decay=config['lambda'])
 
     trainer = Trainer(train_loader, model, optimizer)
@@ -46,7 +50,8 @@ if __name__ == '__main__':
     }
     for epoch in range(1, config['epoch_num'] + 1):
         train_start = time.time()
-        loss = trainer.train()
+        # loss = trainer.train()
+        loss = 0
         train_time = time.time() - train_start
 
         eval_start = time.time()

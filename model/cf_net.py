@@ -7,8 +7,9 @@ class CFNet(nn.Module):
         super(CFNet, self).__init__()
         assert user_mlp_dims[-1] == item_mlp_dims[-1], 'The DMF outlayer must be the same'
 
-        self.embed_user = nn.Embedding(user_num, mlp_dims[0] // 2)
-        self.embed_item = nn.Embedding(item_num, mlp_dims[0] // 2)
+        # In the official implement, the first layer has no activation
+        self.embed_user = nn.Linear(item_num, mlp_dims[0] // 2)
+        self.embed_item = nn.Linear(user_num, mlp_dims[0] // 2)
 
         self.mlp = nn.Sequential()
         for i in range(len(mlp_dims) - 1):
@@ -24,7 +25,6 @@ class CFNet(nn.Module):
         for i in range(len(user_mlp_dims) - 1):
             self.user_mlp.add_module('user_linear_%d' % i, nn.Linear(user_mlp_dims[i], user_mlp_dims[i + 1]))
             self.user_mlp.add_module('user_relu_%d' % i, nn.ReLU())
-
         for i in range(len(item_mlp_dims) - 1):
             self.item_mlp.add_module('item_linear_%d' % i, nn.Linear(item_mlp_dims[i], item_mlp_dims[i + 1]))
             self.item_mlp.add_module('item_relu_%d' % i, nn.ReLU())
@@ -37,9 +37,9 @@ class CFNet(nn.Module):
         self.device = device
         self.to(device)
 
-    def forward(self, uids, iids, user_vecs, item_vecs):
-        user_embedding = self.embed_user(uids)
-        item_embedding = self.embed_item(iids)
+    def forward(self, user_vecs, item_vecs):
+        user_embedding = self.embed_user(user_vecs)
+        item_embedding = self.embed_item(item_vecs)
         mlp_vecs = torch.cat((user_embedding, item_embedding), dim=1)
         mlp_vecs = self.mlp(mlp_vecs)
 
@@ -53,8 +53,8 @@ class CFNet(nn.Module):
 
         return pred_ratings
 
-    def predict(self, uids, iids, user_vecs, item_vecs):
+    def predict(self, user_vecs, item_vecs):
         with torch.no_grad():
-            pred_ratings = self.forward(uids, iids, user_vecs, item_vecs)
+            pred_ratings = self.forward(user_vecs, item_vecs)
 
         return pred_ratings
