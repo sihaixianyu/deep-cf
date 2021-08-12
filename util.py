@@ -1,34 +1,36 @@
-import os
-import pickle
-
 import numpy as np
 import pandas as pd
 
 
-def load_data(data_dir: str) -> (np.ndarray, np.ndarray, np.ndarray, dict, dict):
-    pos_train_path = os.path.join(data_dir, 'pos_train.csv')
-    pos_test_path = os.path.join(data_dir, 'pos_test.csv')
-    neg_path = os.path.join(data_dir, 'neg.dict')
-    info_path = os.path.join(data_dir, 'info.dict')
-    inter_path = os.path.join(data_dir, 'inter_mat.npy')
+def load_data(data_prefix: str) -> (int, int, np.ndarray, list, list):
+    train_df = pd.read_csv(
+        '{}.train.rating'.format(data_prefix),
+        sep='\t', header=None, names=['user', 'item'],
+        usecols=[0, 1], dtype={0: np.int32, 1: np.int32})
 
-    check_file(pos_train_path, pos_test_path, neg_path, inter_path)
+    user_num = train_df['user'].max() + 1
+    item_num = train_df['item'].max() + 1
 
-    pos_train_arr = pd.read_csv(pos_train_path).to_numpy()
-    pos_test_arr = pd.read_csv(pos_test_path).to_numpy()
-    inter_mat = np.load(inter_path)
-    with open(neg_path, 'rb') as f:
-        neg_dict = pickle.load(f)
-    with open(info_path, 'rb') as f:
-        info_dict = pickle.load(f)
+    train_list = train_df.values.tolist()
+    inter_mat = np.zeros((user_num, item_num), dtype=np.float32)
+    for x in train_list:
+        inter_mat[x[0], x[1]] = 1.0
 
-    return pos_train_arr, pos_test_arr, inter_mat, neg_dict, info_dict
+    test_list = []
+    with open('{}.test.negative'.format(data_prefix), 'r') as fd:
+        line = fd.readline()
+        while line and line != '':
+            arr = line.split('\t')
+            # Add latest pos_iid
+            uid = eval(arr[0])[0]
+            pos_iid = eval(arr[0])[1]
+            test_list.append([uid, pos_iid])
+            # Add random sampled 100 neg_iid
+            for i in arr[1:]:
+                test_list.append([uid, int(i)])
+            line = fd.readline()
 
-
-def check_file(*files: str):
-    for file in files:
-        if not os.path.exists(file):
-            raise FileNotFoundError('{} not exist, please run process script!'.format(file))
+    return user_num, item_num, inter_mat, train_list, test_list
 
 
 def print_res(content: str):
@@ -38,4 +40,4 @@ def print_res(content: str):
 
 
 if __name__ == '__main__':
-    load_data('data/ml-1m/')
+    pass

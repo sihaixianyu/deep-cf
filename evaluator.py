@@ -34,13 +34,13 @@ class Evaluator:
         return np.mean(hit_list).item(), np.mean(ndcg_list).item()
 
     @staticmethod
-    def hit(iid, rec_list):
+    def hit(iid, rec_list) -> float:
         if iid in rec_list:
             return 1
         return 0
 
     @staticmethod
-    def ndcg(iid, rec_list):
+    def ndcg(iid, rec_list) -> float:
         if iid in rec_list:
             idx = rec_list.index(iid)
             return np.reciprocal(np.log2(idx + 2))

@@ -7,15 +7,15 @@ class DMF(nn.Module):
         super(DMF, self).__init__()
         assert user_mlp_dims[-1] == item_mlp_dims[-1], 'The DMF outlayer must be the same'
 
-        user_mlp_dims.insert(0, item_num)
-        item_mlp_dims.insert(0, user_num)
-
         self.user_mlp = nn.Sequential()
         self.item_mlp = nn.Sequential()
 
+        self.user_mlp.add_module('user_embed', nn.Linear(item_num, user_mlp_dims[0]))
         for i in range(len(user_mlp_dims) - 1):
             self.user_mlp.add_module('user_linear_%d' % i, nn.Linear(user_mlp_dims[i], user_mlp_dims[i + 1]))
             self.user_mlp.add_module('user_relu_%d' % i, nn.ReLU())
+
+        self.item_mlp.add_module('item_embed', nn.Linear(user_num, item_mlp_dims[0]))
         for i in range(len(item_mlp_dims) - 1):
             self.item_mlp.add_module('item_linear_%d' % i, nn.Linear(item_mlp_dims[i], item_mlp_dims[i + 1]))
             self.item_mlp.add_module('item_relu_%d' % i, nn.ReLU())

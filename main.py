@@ -19,25 +19,20 @@ if __name__ == '__main__':
     config = toml.load(os.path.join(root, 'config.toml'))
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    data_dir = os.path.join(root, 'data/', config['data_name'])
-    pos_train_arr, pos_test_arr, inter_mat, neg_dict, info_dict = load_data(data_dir)
+    data_prefix = os.path.join(root, 'data/', config['data_name'])
+    user_num, item_num, inter_mat, train_list, test_list = load_data(data_prefix)
 
-    train_dataset = TrainDataset(info_dict, pos_train_arr, inter_mat, config['neg_num'])
-    test_dataset = TestDataset(info_dict, pos_test_arr, inter_mat, neg_dict)
+    train_dataset = TrainDataset(user_num, item_num, inter_mat, train_list, config['neg_num'])
+    test_dataset = TestDataset(user_num, item_num, inter_mat, test_list)
 
     # Warning: we can't not shuffle the test data, because it has static oreder for each user
     train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True,
                               num_workers=config['num_workers'])
     test_loader = DataLoader(test_dataset, batch_size=config['test_neg_num'], shuffle=False)
 
-    model = MLP(info_dict['user_num'], info_dict['item_num'], config['mlp_dims'], device=device)
-    # model = DMF(info_dict['user_num'], info_dict['item_num'],
-    #             config['user_mlp_dims'], config['item_mlp_dims'],
-    #             device=device)
-    # model = CFNet(info_dict['user_num'], info_dict['item_num'], config['mlp_dims'],
-    #               config['user_mlp_dims'],
-    #               config['item_mlp_dims'],
-    #               device=device)
+    model = MLP(user_num, item_num, config['mlp_dims'], device)
+    # model = DMF(user_num, item_num, config['user_mlp_dims'], config['item_mlp_dims'], device)
+    # model = CFNet(user_num, 'item_num', config['mlp_dims'], config['user_mlp_dims'], config['item_mlp_dims'], device)
     optimizer = torch.optim.Adam(model.parameters(), lr=config['learning_rate'], weight_decay=config['lambda'])
 
     trainer = Trainer(train_loader, model, optimizer)
